@@ -1,22 +1,23 @@
-import {useNavigate} from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/useAuthHook'
 import styles from './Logout.module.css'
 
+export default function Logout() {
+    const navigate = useNavigate()
+    const { logout } = useAuth()
 
-export default function Logout({ onLogout }) {
-
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-
-        onLogout();
-        navigate('/');
-
-    };
+    useEffect(() => {
+        const handleLogout = async () => {
+            logout()
+            navigate('/login', { replace: true })
+        }
+        handleLogout()
+    }, [logout, navigate])
 
     return (
-        <button onClick={handleLogout} className={styles.link}>
-            Sair
-        </button>
-    );
+        <div className={styles.logoutContainer}>
+            <p>Saindo...</p>
+        </div>
+    )
 }

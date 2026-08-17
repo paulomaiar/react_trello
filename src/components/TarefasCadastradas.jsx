@@ -1,4 +1,5 @@
 import Coluna from './Coluna'
+import styles from './TarefasCadastradas.module.css'
 
 const COLUNAS = [
     { key: 'A FAZER', title: 'A fazer' },
@@ -9,22 +10,36 @@ const COLUNAS = [
 export default function TarefasCadastradas({
     tarefas = [],
     filtro,
-    onFiltroChange,
+    filtroPrioridade,
+    onFiltroPrioridadeChange,
     onConcluir,
     onExcluir,
     onAtualizarPrioridade,
     onAtualizarColuna,
+    onEditar,
+    onAdicionar,
 }) {
 
     const total = tarefas.length
     const pendentes = tarefas.filter((tarefa) => !(tarefa.concluida || tarefa.coluna === 'CONCLUÍDA')).length
     const concluidas = total - pendentes
     
+    // Filtro duplo: status E prioridade
     const listaFiltrada = tarefas.filter((tarefa) => {
+        // Filtro de STATUS (coluna)
         const coluna = tarefa.coluna || (tarefa.concluida ? 'CONCLUÍDA' : 'A FAZER')
-        if (filtro === 'all') return true
-        if (filtro === 'pendentes') return coluna !== 'CONCLUÍDA'
-        return coluna === 'CONCLUÍDA'
+        const passouFiltroStatus = 
+            filtro === 'all' ? true :
+            filtro === 'pendentes' ? coluna !== 'CONCLUÍDA' :
+            coluna === 'CONCLUÍDA'
+        
+        // Filtro de PRIORIDADE
+        const passouFiltroPrioridade = 
+            filtroPrioridade === 'todas' ? true :
+            tarefa.prioridade === filtroPrioridade
+        
+        // AMBOS precisam passar
+        return passouFiltroStatus && passouFiltroPrioridade
     })
 
     
@@ -38,6 +53,23 @@ export default function TarefasCadastradas({
                     <span id="contador-pendentes">Pendentes: {pendentes}</span>
                     <span id="contador-concluidas">Concluídas: {concluidas}</span>
                 </div>
+            </div>
+
+            {/* FILTRO DE PRIORIDADE */}
+            <div className={styles.filtroPrioridadeContainer}>
+                <label htmlFor="filtro-prioridade">
+                    Filtrar por prioridade:
+                </label>
+                <select 
+                    id="filtro-prioridade"
+                    value={filtroPrioridade} 
+                    onChange={(e) => onFiltroPrioridadeChange(e.target.value)}
+                >
+                    <option value="todas">Todas</option>
+                    <option value="alta">🔴 Alta</option>
+                    <option value="media">🟡 Média</option>
+                    <option value="baixa">🟢 Baixa</option>
+                </select>
             </div>
 
             <div className="board">
@@ -58,6 +90,8 @@ export default function TarefasCadastradas({
                             onExcluir={onExcluir}
                             onAtualizarPrioridade={onAtualizarPrioridade}
                             onAtualizarColuna={onAtualizarColuna}
+                            onEditar={onEditar}
+                            onAdicionar={onAdicionar}
                         />
                     )
                 })}

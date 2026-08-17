@@ -1,5 +1,51 @@
+.page-shell {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+  padding-left: 64px;
+}
+
+.sidebar-toggle {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 30;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: #1b2a3b;
+  color: #e2e8f0;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background: #1e3a5f;
+}
+
+.sidebar-toggle.is-open {
+  left: 220px;
+}
+
+.sidebar-toggle.is-closed {
+  left: 18px;
+}
+
 #app {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  flex: 1;
 }
+

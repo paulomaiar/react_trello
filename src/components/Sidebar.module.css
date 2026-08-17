@@ -5,9 +5,11 @@
     padding: 24px 16px;
     position: fixed; /* fica fixa enquanto o conteúdo rola */
     top: 0; left: 0;
+    z-index: 20;
     display: flex;
     flex-direction: column;
     gap: 32px;
+    box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.12);
 }
 
 .logo h1 { color: #F5A623; font-size: 1.4rem; }

@@ -1,40 +1,22 @@
-/* Container — fundo escuro, card centralizado */
-
 .login-container {
 
-    min-height: 100vh;
+    min-height: 100vh; background-color: #0D1B2A;
 
-    background-color: #0D1B2A;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
 
 }
 
-/* Card — painel com o formulário */
-
 .login-card {
 
-    background-color: #1B2A3B;
+    background-color: #1B2A3B; border: 1px solid #1E3A5F;
 
-    border: 1px solid #1E3A5F;
+    border-radius: 12px; padding: 40px 36px;
 
-    border-radius: 12px;
+    width: 100%; max-width: 380px;
 
-    padding: 40px 36px;
+    display: flex; flex-direction: column; gap: 14px;
 
-    width: 100%;
-
-    max-width: 380px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 
 }
 
@@ -42,24 +24,57 @@
 
 .login-subtitulo { color: #64748B; font-size: 0.9rem; text-align: center; }
 
-.login-input { 
+.login-input {
+
     background: #0D1B2A; color: #E2E8F0;
 
     border: 1px solid #334155; border-radius: 6px;
 
-    padding: 11px 14px; font-size: 1rem; outline: none; 
+    padding: 11px 14px; font-size: 1rem;
+
+    font-family: inherit; outline: none;
+
+    transition: border-color 0.2s ease;
+
 }
 
-.login-erro { color: #EF4444; font-size: 0.9rem; text-align: center; }
+.login-input:focus { border-color: #38BDF8; }
 
-.login-btn { 
+.login-erro {
+
+    color: #EF4444; background: rgba(239,68,68,0.08);
+
+    border: 1px solid rgba(239,68,68,0.3);
+
+    border-radius: 6px; padding: 8px 12px; text-align: center;
+}
+
+.login-btn {
+
     background: #1B5E9A; color: white; border: none;
 
     border-radius: 6px; padding: 12px;
 
-    font-size: 1rem; font-weight: 700; cursor: pointer; 
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+
+    transition: background-color 0.2s ease, transform 0.1s ease;
+
 }
+
+.login-btn:hover { background: #1E4A7A; }
+
+.login-btn:active { transform: scale(0.98); }
 
 .login-aviso { color: #334155; font-size: 0.75rem; text-align: center; }
 
-/* Dia 4: focus nos inputs, hover no botão e animação shake */
+@keyframes shake {
+
+    0%,100% { transform: translateX(0); }
+
+    15%,45%,75% { transform: translateX(-8px); }
+
+    30%,60%,90% { transform: translateX(8px); }
+
+}
+
+.shake { animation: shake 0.5s ease-in-out; }

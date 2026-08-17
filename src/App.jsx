@@ -1,40 +1,46 @@
 import './App.css'
 
-//hooks
-import {Routes, Route} from 'react-router-dom'
-import { useAuth } from './context/AuthContext'
-
-//components
+// Components
 import Header from './components/Header'
 import Footer from './components/Footer'
-import RotaPrivada from './components/RotaPrivada'
-import SideBar from './components/SideBar'
+import Sidebar from './components/SideBar'
 
-
-//Pages
-import Home from './pages/Home'
-import Dashboard from './pages/Dashboard'
-import Sobre from './pages/Sobre'
-import Login from './pages/Login'
-
+// Routes
 import AppRoutes from './routes/AppRoutes'
-
+import { useAuth } from './context/useAuthHook'
+import { useState } from 'react'
 
 function App() {
-  const { logado, setLogado } = useAuth()
+  const { logado } = useAuth()
+  const [sidebarAberta, setSidebarAberta] = useState(true)
 
   return (
-      <div className="page-shell">
+    <div className="page-shell">
+      {logado && (
+        <>
+          <button
+            type="button"
+            className={`sidebar-toggle ${sidebarAberta ? 'is-open' : 'is-closed'}`}
+            onClick={() => setSidebarAberta((estado) => !estado)}
+            aria-label={sidebarAberta ? 'Fechar sidebar' : 'Abrir sidebar'}
+            title={sidebarAberta ? 'Fechar sidebar' : 'Abrir sidebar'}
+          >
+            {sidebarAberta ? '☰' : '☰'}
+          </button>
+          <Sidebar aberta={sidebarAberta} />
+        </>
+      )}
+
+      <div className="main-content">
         <Header titulo="TaskFlow" subtitulo="Gerencie suas tarefas com mais organização." />
-        {/* <Sidebar /> */} 
 
         <main id="app">
           <AppRoutes />
-
         </main>
 
         <Footer />
       </div>
+    </div>
   )
 }
 

@@ -5,16 +5,14 @@ export default function PainelTarefas({
     sectionHeader,
     tarefas,
     filtro,
-    onFiltroChange,
-    texto,
-    setTexto,
-    prioridade,
-    setPrioridade,
+    filtroPrioridade,
     onAdicionar,
+    onEditar,
     onConcluir,
     onExcluir,
     onAtualizarPrioridade,
     onAtualizarColuna,
+    onFiltroPrioridadeChange,
 }) {
     return (
         <section className="painel-tarefas" aria-labelledby="tarefas-title" id="tarefas">
@@ -23,22 +21,20 @@ export default function PainelTarefas({
             </header>
 
             <AdicionarTarefa
-                button="Adicionar"
-                texto={texto}
-                setTexto={setTexto}
-                prioridade={prioridade}
-                setPrioridade={setPrioridade}
-                onAdicionar={onAdicionar}
+                onAdicionar={() => onAdicionar?.('A FAZER')}
             />
 
             <TarefasCadastradas
                 tarefas={tarefas}
                 filtro={filtro}
-                onFiltroChange={onFiltroChange}
+                filtroPrioridade={filtroPrioridade}
+                onFiltroPrioridadeChange={onFiltroPrioridadeChange}
+                onEditar={onEditar}
                 onConcluir={onConcluir}
                 onExcluir={onExcluir}
                 onAtualizarPrioridade={onAtualizarPrioridade}
                 onAtualizarColuna={onAtualizarColuna}
+                onAdicionar={onAdicionar}
             />
         </section>
     )

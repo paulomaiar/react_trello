@@ -1,7 +1,7 @@
 import ItemTarefa from './ItemTarefas'
 import styles from './ItemTarefas.module.css'
 
-export default function ListaTarefas({ tarefas, onConcluir, onExcluir, onAtualizarPrioridade, onAtualizarColuna, coluna }) {
+export default function ListaTarefas({ tarefas, onConcluir, onExcluir, onAtualizarPrioridade, onAtualizarColuna, onEditar, coluna }) {
     const total = tarefas.length
     const pendentes = tarefas.filter((tarefa) => !(tarefa.concluida || tarefa.coluna === 'CONCLUÍDA')).length
     const concluidas = total - pendentes
@@ -20,6 +20,7 @@ export default function ListaTarefas({ tarefas, onConcluir, onExcluir, onAtualiz
                     onExcluir={onExcluir}
                     onAtualizarPrioridade={onAtualizarPrioridade}
                     onAtualizarColuna={onAtualizarColuna}
+                    onEditar={onEditar}
                 />
             </ul>
         </>

@@ -1,7 +1,7 @@
 import styles from './ItemTarefas.module.css'
 import PrioridadeTarefa from './PrioridadeTarefa'
 
-export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtualizarPrioridade, onAtualizarColuna }) {
+export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtualizarPrioridade, onAtualizarColuna, onEditar }) {
 
 
     return (
@@ -24,7 +24,7 @@ export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtua
                 const textClassName = `${styles.text} ${tarefa.concluida || tarefa.coluna === 'CONCLUÍDA' ? styles.completedText : ''}`
 
                 return (
-                    <li key={tarefa.id} className={itemClassName}>
+                    <li key={tarefa.id} className={itemClassName} onDoubleClick={() => onEditar?.(tarefa)}>
                         <div className={styles.content}>
                             <span className={textClassName}>{tarefa.texto}</span>
                             {tarefa.cidade || tarefa.cep ? (
@@ -52,6 +52,9 @@ export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtua
                                 setPrioridade={(novaPrioridade) => onAtualizarPrioridade?.(tarefa.id, novaPrioridade)}
                                 label=""
                             />
+                            <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => onEditar?.(tarefa)}>
+                                ✏️ Editar
+                            </button>
                             <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => onConcluir?.(tarefa.id)}>
                                 {tarefa.concluida || tarefa.coluna === 'CONCLUÍDA' ? 'Reabrir' : 'Concluir'}
                             </button>
