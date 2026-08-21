@@ -1,18 +1,38 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import useLocalStorage from '../hooks/useLocalStorage'
 import PainelTarefas from '../components/PainelTarefas'
 import ModalTarefa from '../components/ModalTarefa'
 
-const STORAGE_KEY = 'tarefas'
+const API_URL = import.meta.env.VITE_API_URL
+
 
 export default function Dashboard() {
-    const [tarefas, setTarefas] = useLocalStorage(STORAGE_KEY, [])
+    const [tarefas, setTarefas] = useState([])
+    const [carregando, setCarregando] = useState(true)
     const [filtro, setFiltro] = useState('all')
     const [filtroPrioridade, setFiltroPrioridade] = useState('todas')
     const [modalAberto, setModalAberto] = useState(false)
     const [tarefaEditando, setTarefaEditando] = useState(null)
     const [colunaAtiva, setColunaAtiva] = useState('A FAZER')
+
+    useEffect(() => {
+        async function carregarTarefas() {
+            try {
+                // Dispara a requisição GET para o endpoint
+                const resposta = await axios.get(API_URL)
+            
+                // O axios coloca os dados vindos em formato JSON dentro da propriedade .data
+                setTarefas(resposta.data)
+            } catch (erro) {
+                console.error("Erro ao buscar dados do servidor:", erro)
+            } finally {
+                // Desativa o aviso de "Carregando..."
+                setCarregando(false)
+            }
+        }
+
+        carregarTarefas()
+    }, []) // Array vazio = roda 1 vez ao carregar o componente
 
     useEffect(() => {
         const pendentes = tarefas.filter((tarefa) => !(tarefa.concluida || tarefa.coluna === 'CONCLUÍDA')).length
@@ -55,78 +75,94 @@ export default function Dashboard() {
     async function adicionarTarefa({ texto: textoTarefa, prioridade: prioridadeTarefa, cep: cepTarefa }) {
         const cidadeTarefa = await consultarCidade(cepTarefa)
 
-        const novo = {
-        id: Date.now() + Math.floor(Math.random() * 1000),
+        const novaTarefa = {
         texto: textoTarefa,
         prioridade: prioridadeTarefa,
         concluida: false,
-        coluna: 'A FAZER',
-        cep: cepTarefa || '',
+        coluna: colunaAtiva || 'A FAZER',
         cidade: cidadeTarefa || '',
         }
 
-        setTarefas((prev) => [...prev, novo])
+        try {
+            const resposta = await axios.post(API_URL, novaTarefa)
+
+            const tarefaSalva = resposta.data
+
+            setTarefas((tarefasAtuais) => [...tarefasAtuais, tarefaSalva])
+        } catch (erro) {
+            console.error('Erro ao adicionar tarefa:', erro)
+        }
+    }
+
+    async function atualizarTarefa(id, dadosAtualizados) {
+        try{
+            // Fazemos o PUT/PATCH enviando apenas os campos alterados
+            const { data: tarefaAtualizada } = await axios.put(`${API_URL}/${id}`, dadosAtualizados)
+
+            setTarefas((prev) => 
+                prev.map((tarefa) => (tarefa.id === id ? tarefaAtualizada : tarefa))
+            )
+        }   catch (erro) {
+            console.error(`Erro ao atualizar a tarefa ${id}:`, erro)
+        }
     }
 
     function atualizarColunaTarefa(id, novaColuna) {
-        setTarefas((prev) =>
-        prev.map((tarefa) =>
-            tarefa.id === id
-            ? { ...tarefa, coluna: novaColuna, concluida: novaColuna === 'CONCLUÍDA' }
-            : tarefa,
-        ),
-        )
+        const estaConcluida = novaColuna === 'CONCLUÍDA'
+
+        atualizarTarefa(id, {
+            coluna: novaColuna,
+            concluida: estaConcluida,
+        })
     }
 
     function concluirTarefa(id) {
-        setTarefas((prev) =>
-        prev.map((tarefa) => {
-            if (tarefa.id !== id) return tarefa
+        const tarefa = tarefas.find((t) => t.id === id)
 
-            const estaConcluida = tarefa.coluna === 'CONCLUÍDA' || tarefa.concluida
+        if (!tarefa) return
 
-            return {
-            ...tarefa,
-            coluna: estaConcluida ? 'A FAZER' : 'CONCLUÍDA',
-            concluida: !estaConcluida,
-            }
-        }),
-        )
+        //verifica o estado atual
+        const estaConcluida = tarefa.concluida || tarefa.coluna === 'CONCLUÍDA'
+        const novoStatus = !estaConcluida
+        
+        atualizarTarefa(id, {
+            concluida: novoStatus,
+            coluna: novoStatus ? 'CONCLUÍDA' : 'A FAZER',
+        })
     }
 
-    function excluirTarefa(id) {
+    async function atualizarPrioridade(id, novaPrioridade) {
+        atualizarTarefa(id, { prioridade: novaPrioridade })
+    }
+
+
+    async function excluirTarefa(id) {
         
 
         const confirmado = window.confirm('Tem certeza que deseja excluir esta tarefa?')
-        if (confirmado){
+        if (!confirmado) return
+
+        try {
+            await axios.delete(`${API_URL}/${id}`)
+
+            // se o servidor apagou com sucesso, removemos da tela no react
             setTarefas((prev) => prev.filter((tarefa) => tarefa.id !== id))
-        };
+        }   catch(erro) {
+            console.erro(`Erro ao excluir a tarefa ${id}:`, erro)
+        }
     }
 
-    function atualizarPrioridade(id, novaPrioridade) {
-        setTarefas((prev) =>
-        prev.map((tarefa) => (tarefa.id === id ? { ...tarefa, prioridade: novaPrioridade } : tarefa)),
-        )
-    }
 
     const tarefasExibidas = tarefas.map((tarefa) => ({
         ...tarefa,
         coluna: tarefa.coluna || (tarefa.concluida ? 'CONCLUÍDA' : 'A FAZER'),
     }))
 
-    function handleSalvarTarefa(dadosTarefa) {
+    async function handleSalvarTarefa(dadosTarefa) {
         if (dadosTarefa.id) {
-            // Editar
-            setTarefas((prev) =>
-                prev.map((tarefa) =>
-                    tarefa.id === dadosTarefa.id
-                        ? { ...tarefa, ...dadosTarefa }
-                        : tarefa
-                )
-            )
+            await atualizarTarefa(dadosTarefa.id, dadosTarefa)
         } else {
-            // Criar
-            adicionarTarefa(dadosTarefa)
+            await adicionarTarefa(dadosTarefa)
         }
         setModalAberto(false)
         setTarefaEditando(null)
