@@ -9,6 +9,7 @@ const API_URL = import.meta.env.VITE_API_URL
 export default function Dashboard() {
     const [tarefas, setTarefas] = useState([])
     const [carregando, setCarregando] = useState(true)
+    const [erroAPI, setErroAPI] = useState(null)
     const [filtro, setFiltro] = useState('all')
     const [filtroPrioridade, setFiltroPrioridade] = useState('todas')
     const [modalAberto, setModalAberto] = useState(false)
@@ -19,12 +20,18 @@ export default function Dashboard() {
         async function carregarTarefas() {
             try {
                 // Dispara a requisição GET para o endpoint
+                if (!API_URL) {
+                    throw new Error('VITE_API_URL não configurada')
+                }
                 const resposta = await axios.get(API_URL)
             
                 // O axios coloca os dados vindos em formato JSON dentro da propriedade .data
                 setTarefas(resposta.data)
+                setErroAPI(null)
             } catch (erro) {
                 console.error("Erro ao buscar dados do servidor:", erro)
+                setErroAPI(erro.message || 'Erro ao carregar tarefas')
+                setTarefas([])
             } finally {
                 // Desativa o aviso de "Carregando..."
                 setCarregando(false)
@@ -148,7 +155,7 @@ export default function Dashboard() {
             // se o servidor apagou com sucesso, removemos da tela no react
             setTarefas((prev) => prev.filter((tarefa) => tarefa.id !== id))
         }   catch(erro) {
-            console.erro(`Erro ao excluir a tarefa ${id}:`, erro)
+            console.error(`Erro ao excluir a tarefa ${id}:`, erro)
         }
     }
 
@@ -168,7 +175,19 @@ export default function Dashboard() {
         setTarefaEditando(null)
         setColunaAtiva(null)
     }
+    if (carregando) {
+        return <div style={{ padding: '2rem', textAlign: 'center' }}>Carregando tarefas...</div>
+    }
 
+    if (erroAPI) {
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#d32f2f' }}>
+                <h2>Erro ao carregar tarefas</h2>
+                <p>{erroAPI}</p>
+                <button onClick={() => window.location.reload()}>Tentar novamente</button>
+            </div>
+        )
+    }
     return(
         <>
             <PainelTarefas

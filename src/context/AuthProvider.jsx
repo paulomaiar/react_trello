@@ -4,11 +4,21 @@ import { AuthContext } from './AuthContext'
 export function AuthProvider({ children }) {
   const [logado, setLogado] = useState(() => {
     // Tenta recuperar do localStorage na primeira renderização
-    return localStorage.getItem('logado') === 'true'
+    try {
+      const valor = localStorage.getItem('logado')
+      return valor === 'true'
+    } catch (e) {
+      console.warn('localStorage não disponível:', e)
+      return false
+    }
   })
 
   useEffect(() => {
-    localStorage.setItem('logado', logado)
+    try {
+      localStorage.setItem('logado', logado)
+    } catch (e) {
+      console.warn('Erro ao salvar no localStorage:', e)
+    }
   }, [logado])
 
   // Função de login — chama setLogado(true)
