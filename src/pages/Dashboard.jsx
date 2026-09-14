@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import PainelTarefas from '../components/PainelTarefas'
 import ModalTarefa from '../components/ModalTarefa'
-
-const API_URL = import.meta.env.VITE_API_URL
-
+import { tarefasApi } from '../services/api'
 
 export default function Dashboard() {
     const [tarefas, setTarefas] = useState([])
@@ -19,27 +17,20 @@ export default function Dashboard() {
     useEffect(() => {
         async function carregarTarefas() {
             try {
-                // Dispara a requisição GET para o endpoint
-                if (!API_URL) {
-                    throw new Error('VITE_API_URL não configurada')
-                }
-                const resposta = await axios.get(API_URL)
-            
-                // O axios coloca os dados vindos em formato JSON dentro da propriedade .data
+                const resposta = await tarefasApi.listar()
                 setTarefas(resposta.data)
                 setErroAPI(null)
             } catch (erro) {
-                console.error("Erro ao buscar dados do servidor:", erro)
-                setErroAPI(erro.message || 'Erro ao carregar tarefas')
+                console.error('Erro ao buscar dados do servidor:', erro)
+                setErroAPI(erro.response?.data?.message || erro.message || 'Erro ao carregar tarefas')
                 setTarefas([])
             } finally {
-                // Desativa o aviso de "Carregando..."
                 setCarregando(false)
             }
         }
 
         carregarTarefas()
-    }, []) // Array vazio = roda 1 vez ao carregar o componente
+    }, [])
 
     useEffect(() => {
         const pendentes = tarefas.filter((tarefa) => !(tarefa.concluida || tarefa.coluna === 'CONCLUÍDA')).length
@@ -50,32 +41,29 @@ export default function Dashboard() {
         }
     }, [tarefas])
 
-    // ✅ ABRE MODAL PARA CRIAR NOVA TAREFA
     function abrirModalCriar(coluna = 'A FAZER') {
-        setTarefaEditando(null)  // null = modo criação
+        setTarefaEditando(null)
         setColunaAtiva(coluna)
         setModalAberto(true)
     }
 
-    // ✅ ABRE MODAL PARA EDITAR TAREFA EXISTENTE
     function abrirModalEditar(tarefa) {
-        setTarefaEditando(tarefa)  // Preenche com dados existentes
+        setTarefaEditando(tarefa)
         setModalAberto(true)
     }
 
     async function consultarCidade(cepParam) {
         const cleaned = (cepParam || '').toString().replace(/\D/g, '')
-        // CEP brasileiro tem 8 dígitos
         if (!cleaned || cleaned.length !== 8) return ''
 
         try {
-        const url = `https://viacep.com.br/ws/${cleaned}/json/`
-        const { data } = await axios.get(url)
-        if (data && data.erro) return ''
-        return data.localidade || ''
+            const url = `https://viacep.com.br/ws/${cleaned}/json/`
+            const { data } = await axios.get(url)
+            if (data && data.erro) return ''
+            return data.localidade || ''
         } catch (err) {
-        console.warn(`Erro ao consultar CEP ${cepParam}:`, err.message)
-        return ''
+            console.warn(`Erro ao consultar CEP ${cepParam}:`, err.message)
+            return ''
         }
     }
 
@@ -83,18 +71,16 @@ export default function Dashboard() {
         const cidadeTarefa = await consultarCidade(cepTarefa)
 
         const novaTarefa = {
-        texto: textoTarefa,
-        prioridade: prioridadeTarefa,
-        concluida: false,
-        coluna: colunaAtiva || 'A FAZER',
-        cidade: cidadeTarefa || '',
+            texto: textoTarefa,
+            prioridade: prioridadeTarefa,
+            concluida: false,
+            coluna: colunaAtiva || 'A FAZER',
+            cidade: cidadeTarefa || '',
         }
 
         try {
-            const resposta = await axios.post(API_URL, novaTarefa)
-
+            const resposta = await tarefasApi.criar(novaTarefa)
             const tarefaSalva = resposta.data
-
             setTarefas((tarefasAtuais) => [...tarefasAtuais, tarefaSalva])
         } catch (erro) {
             console.error('Erro ao adicionar tarefa:', erro)
@@ -102,14 +88,12 @@ export default function Dashboard() {
     }
 
     async function atualizarTarefa(id, dadosAtualizados) {
-        try{
-            // Fazemos o PUT/PATCH enviando apenas os campos alterados
-            const { data: tarefaAtualizada } = await axios.put(`${API_URL}/${id}`, dadosAtualizados)
-
-            setTarefas((prev) => 
+        try {
+            const { data: tarefaAtualizada } = await tarefasApi.atualizar(id, dadosAtualizados)
+            setTarefas((prev) =>
                 prev.map((tarefa) => (tarefa.id === id ? tarefaAtualizada : tarefa))
             )
-        }   catch (erro) {
+        } catch (erro) {
             console.error(`Erro ao atualizar a tarefa ${id}:`, erro)
         }
     }
@@ -128,10 +112,9 @@ export default function Dashboard() {
 
         if (!tarefa) return
 
-        //verifica o estado atual
         const estaConcluida = tarefa.concluida || tarefa.coluna === 'CONCLUÍDA'
         const novoStatus = !estaConcluida
-        
+
         atualizarTarefa(id, {
             concluida: novoStatus,
             coluna: novoStatus ? 'CONCLUÍDA' : 'A FAZER',
@@ -142,23 +125,17 @@ export default function Dashboard() {
         atualizarTarefa(id, { prioridade: novaPrioridade })
     }
 
-
     async function excluirTarefa(id) {
-        
-
         const confirmado = window.confirm('Tem certeza que deseja excluir esta tarefa?')
         if (!confirmado) return
 
         try {
-            await axios.delete(`${API_URL}/${id}`)
-
-            // se o servidor apagou com sucesso, removemos da tela no react
+            await tarefasApi.remover(id)
             setTarefas((prev) => prev.filter((tarefa) => tarefa.id !== id))
-        }   catch(erro) {
+        } catch (erro) {
             console.error(`Erro ao excluir a tarefa ${id}:`, erro)
         }
     }
-
 
     const tarefasExibidas = tarefas.map((tarefa) => ({
         ...tarefa,
@@ -175,6 +152,7 @@ export default function Dashboard() {
         setTarefaEditando(null)
         setColunaAtiva(null)
     }
+
     if (carregando) {
         return <div style={{ padding: '2rem', textAlign: 'center' }}>Carregando tarefas...</div>
     }
@@ -188,7 +166,8 @@ export default function Dashboard() {
             </div>
         )
     }
-    return(
+
+    return (
         <>
             <PainelTarefas
                 sectionHeader="Minhas tarefas"

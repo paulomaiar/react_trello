@@ -3,10 +3,9 @@ import { AuthContext } from './AuthContext'
 
 export function AuthProvider({ children }) {
   const [logado, setLogado] = useState(() => {
-    // Tenta recuperar do localStorage na primeira renderização
     try {
-      const valor = localStorage.getItem('logado')
-      return valor === 'true'
+      const valor = localStorage.getItem('taskflow_token')
+      return Boolean(valor)
     } catch (e) {
       console.warn('localStorage não disponível:', e)
       return false
@@ -15,19 +14,22 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem('logado', logado)
+      if (logado) {
+        localStorage.setItem('taskflow_token', localStorage.getItem('taskflow_token') || '')
+      } else {
+        localStorage.removeItem('taskflow_token')
+      }
     } catch (e) {
       console.warn('Erro ao salvar no localStorage:', e)
     }
   }, [logado])
 
-  // Função de login — chama setLogado(true)
-  const login = useCallback(() => { 
+  const login = useCallback(() => {
     setLogado(true)
   }, [])
 
-  // Função de logout — chama setLogado(false)
-  const logout = useCallback(() => { 
+  const logout = useCallback(() => {
+    localStorage.removeItem('taskflow_token')
     setLogado(false)
   }, [])
 

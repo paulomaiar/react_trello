@@ -1,99 +1,84 @@
-import { useState, useEffect } from 'react';
-
-import { useNavigate } from 'react-router-dom';
-
-import { useAuth } from '../context/useAuthHook';
-
-import './Login.css';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/useAuthHook'
+import { loginNoBackend } from '../services/api'
+import './Login.css'
 
 export default function Login() {
+  const [usuario, setUsuario] = useState('')
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState('')
+  const [shake, setShake] = useState(false)
+  const [carregando, setCarregando] = useState(false)
 
-    const [usuario, setUsuario] = useState('');
+  const { login, logado } = useAuth()
+  const navigate = useNavigate()
 
-    const [senha, setSenha] = useState('');
+  useEffect(() => {
+    if (logado) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [logado, navigate])
 
-    const [erro, setErro] = useState('');
-
-    const [shake, setShake] = useState(false);
-
-    const { login, logado } = useAuth();
-
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        if (logado) {
-            navigate('/dashboard', { replace: true })
-        }
-    }, [logado, navigate])
-
-    function handleLogin() {
-
-        if (usuario === 'admin' && senha === '1234') {
-
-        login(); // atualiza o AuthContext
-
-        navigate('/dashboard'); // redireciona para o Dashboard
-
-        return;
-
+  async function handleLogin() {
+    if (!usuario.trim() || !senha.trim()) {
+      setErro('Informe usuário e senha')
+      setShake(true)
+      setTimeout(() => setShake(false), 500)
+      return
     }
 
-        setErro('Usuário ou senha incorretos');
+    try {
+      setCarregando(true)
+      setErro('')
 
-        setShake(true);
-
-        // Remove a classe após 500ms para poder disparar de novo
-
-        setTimeout(() => setShake(false), 500);
-
+      await loginNoBackend({ usuario: usuario.trim(), senha: senha.trim() })
+      login()
+      navigate('/dashboard')
+    } catch (error) {
+      const mensagem = error?.response?.data?.message || 'Usuário ou senha incorretos'
+      setErro(mensagem)
+      setShake(true)
+      setTimeout(() => setShake(false), 500)
+    } finally {
+      setCarregando(false)
     }
-    return (
+  }
 
-        <div className='login-container'>
+  return (
+    <div className='login-container'>
+      <div className={`login-card ${shake ? 'shake' : ''}`}>
+        <h1 className='login-logo'>TaskFlow</h1>
+        <p className='login-subtitulo'>Faça login para continuar</p>
 
-            {/* shake é adicionado como classe quando há erro */}
+        <input
+          className='login-input'
+          type='text'
+          placeholder='Usuário'
+          value={usuario}
+          onChange={(e) => setUsuario(e.target.value)}
+        />
 
-            <div className={`login-card ${shake ? 'shake' : ''}`}>
+        <input
+          className='login-input'
+          type='password'
+          placeholder='Senha'
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+        />
 
-                <h1 className='login-logo'>TaskFlow</h1>
+        {erro && <p className='login-erro'>{erro}</p>}
 
-                <p className='login-subtitulo'>Faça login para continuar</p>
+        <button className='login-btn' onClick={handleLogin} disabled={carregando}>
+          {carregando ? 'Entrando...' : 'Entrar'}
+        </button>
 
-                <input className='login-input' type='text'
-
-                placeholder='Usuário' value={usuario}
-
-                onChange={e => setUsuario(e.target.value)} />
-
-                <input className='login-input' type='password'
-
-                placeholder='Senha' value={senha}
-
-                onChange={e => setSenha(e.target.value)}
-
-                onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-
-                {/* Mensagem de erro — renderização condicional */}
-
-                {erro && <p className='login-erro'>{erro}</p>}
-
-                <button className='login-btn' onClick={handleLogin}>
-
-                Entrar
-
-                </button>
-
-                <p className='login-aviso'>
-
-                Este login é apenas para fins didáticos.
-
-                Credenciais reais vêm no módulo back-end.
-
-                </p>
-
-            </div>
-
-        </div>
-    )
+        <p className='login-aviso'>
+          Este login usa o backend em Node. Ajuste as credenciais conforme o servidor.
+        </p>
+      </div>
+    </div>
+  )
 }
 
