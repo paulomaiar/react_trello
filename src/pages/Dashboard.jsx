@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import PainelTarefas from '../components/PainelTarefas'
 import ModalTarefa from '../components/ModalTarefa'
-import { tarefasApi } from '../services/api'
+import api, { normalizarPayloadTarefa } from '../services/api'
 
 export default function Dashboard() {
     const [tarefas, setTarefas] = useState([])
@@ -17,12 +17,12 @@ export default function Dashboard() {
     useEffect(() => {
         async function carregarTarefas() {
             try {
-                const resposta = await tarefasApi.listar()
+                const resposta = await api.get('/tarefas')
                 setTarefas(resposta.data)
                 setErroAPI(null)
             } catch (erro) {
                 console.error('Erro ao buscar dados do servidor:', erro)
-                setErroAPI(erro.response?.data?.message || erro.message || 'Erro ao carregar tarefas')
+                setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao carregar tarefas')
                 setTarefas([])
             } finally {
                 setCarregando(false)
@@ -79,22 +79,25 @@ export default function Dashboard() {
         }
 
         try {
-            const resposta = await tarefasApi.criar(novaTarefa)
-            const tarefaSalva = resposta.data
-            setTarefas((tarefasAtuais) => [...tarefasAtuais, tarefaSalva])
+            const resposta = await api.post('/tarefas', normalizarPayloadTarefa(novaTarefa))
+            setTarefas((tarefasAtuais) => [...tarefasAtuais, resposta.data])
+            setErroAPI(null)
         } catch (erro) {
             console.error('Erro ao adicionar tarefa:', erro)
+            setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao adicionar tarefa')
         }
     }
 
     async function atualizarTarefa(id, dadosAtualizados) {
         try {
-            const { data: tarefaAtualizada } = await tarefasApi.atualizar(id, dadosAtualizados)
+            const resposta = await api.put(`/tarefas/${id}`, normalizarPayloadTarefa(dadosAtualizados))
             setTarefas((prev) =>
-                prev.map((tarefa) => (tarefa.id === id ? tarefaAtualizada : tarefa))
+                prev.map((tarefa) => (tarefa.id === id ? resposta.data : tarefa))
             )
+            setErroAPI(null)
         } catch (erro) {
             console.error(`Erro ao atualizar a tarefa ${id}:`, erro)
+            setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao atualizar tarefa')
         }
     }
 
@@ -130,10 +133,13 @@ export default function Dashboard() {
         if (!confirmado) return
 
         try {
-            await tarefasApi.remover(id)
-            setTarefas((prev) => prev.filter((tarefa) => tarefa.id !== id))
+            await api.delete(`/tarefas/${id}`)
+            const resposta = await api.get('/tarefas')
+            setTarefas(resposta.data)
+            setErroAPI(null)
         } catch (erro) {
             console.error(`Erro ao excluir a tarefa ${id}:`, erro)
+            setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao excluir tarefa')
         }
     }
 

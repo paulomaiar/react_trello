@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { AuthContext } from './AuthContext'
 
 export function AuthProvider({ children }) {
@@ -12,29 +12,41 @@ export function AuthProvider({ children }) {
     }
   })
 
-  useEffect(() => {
+  const [usuario, setUsuario] = useState(() => {
     try {
-      if (logado) {
-        localStorage.setItem('taskflow_token', localStorage.getItem('taskflow_token') || '')
-      } else {
-        localStorage.removeItem('taskflow_token')
-      }
+      return JSON.parse(localStorage.getItem('taskflow_usuario') || 'null')
     } catch (e) {
-      console.warn('Erro ao salvar no localStorage:', e)
+      console.warn('localStorage não disponível:', e)
+      return null
     }
-  }, [logado])
+  })
 
-  const login = useCallback(() => {
-    setLogado(true)
+  const login = useCallback((novoUsuario, token) => {
+    if (!token) return
+
+    try {
+      localStorage.setItem('taskflow_token', token)
+      localStorage.setItem('taskflow_usuario', JSON.stringify(novoUsuario))
+      setUsuario(novoUsuario)
+      setLogado(true)
+    } catch (e) {
+      console.warn('Erro ao salvar a sessão:', e)
+    }
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem('taskflow_token')
+    try {
+      localStorage.removeItem('taskflow_token')
+      localStorage.removeItem('taskflow_usuario')
+    } catch (e) {
+      console.warn('Erro ao remover a sessão:', e)
+    }
+    setUsuario(null)
     setLogado(false)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ logado, setLogado, login, logout }}>
+    <AuthContext.Provider value={{ logado, usuario, setLogado, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -17,7 +17,6 @@ function normalizarColuna(coluna) {
     'em andamento': 'andamento',
     'andamento': 'andamento',
     'concluida': 'concluido',
-    'concluida': 'concluido',
     'concluido': 'concluido',
   }
 
@@ -61,26 +60,27 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('taskflow_token')
-      window.location.href = '/login'
-    }
+  (resposta) => resposta,
+  (erro) => {
+    if (erro.response?.status === 401) {
+      // Limpa ambas as chaves do localStorage
+      localStorage.removeItem('taskflow_token');
+      localStorage.removeItem('taskflow_usuario');
 
-    return Promise.reject(error)
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(erro);
   }
-)
+);
 
 export async function loginNoBackend({ usuario, senha }) {
   const { data } = await api.post('/auth/login', { usuario, senha })
-
-  if (data?.token) {
-    localStorage.setItem('taskflow_token', data.token)
-  }
-
   return data
 }
+
+export { normalizarPayloadTarefa }
 
 export const tarefasApi = {
   listar: () => api.get('/tarefas'),
@@ -88,3 +88,5 @@ export const tarefasApi = {
   atualizar: (id, payload) => api.put(`/tarefas/${id}`, normalizarPayloadTarefa(payload)),
   remover: (id) => api.delete(`/tarefas/${id}`),
 }
+
+export default api

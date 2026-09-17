@@ -20,28 +20,40 @@ export default function Login() {
     }
   }, [logado, navigate])
 
-  async function handleLogin() {
+  async function handleLogin(e) {
+    // Previne o recarregamento da página se estiver num <form>
+    if (e?.preventDefault) e.preventDefault();
+
     if (!usuario.trim() || !senha.trim()) {
-      setErro('Informe usuário e senha')
-      setShake(true)
-      setTimeout(() => setShake(false), 500)
-      return
+      setErro('Informe usuário e senha');
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
     }
 
     try {
-      setCarregando(true)
-      setErro('')
+      setCarregando(true);
+      setErro('');
 
-      await loginNoBackend({ usuario: usuario.trim(), senha: senha.trim() })
-      login()
-      navigate('/dashboard')
+      // 1. Captura a resposta da API contendo { token, usuario }
+      const dados = await loginNoBackend({ usuario: usuario.trim(), senha: senha.trim() });
+
+      // 2. Envia os dados para o AuthContext e localStorage
+      login(dados.usuario, dados.token)
+
+      navigate('/dashboard');
     } catch (error) {
-      const mensagem = error?.response?.data?.message || 'Usuário ou senha incorretos'
-      setErro(mensagem)
-      setShake(true)
-      setTimeout(() => setShake(false), 500)
+      // 3. Tenta ler 'erro' da API primeiro, depois 'message' ou usa o texto padrão
+      const mensagem =
+        error?.response?.data?.erro ||
+        error?.response?.data?.message ||
+        'Usuário ou senha incorretos';
+
+      setErro(mensagem);
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
     } finally {
-      setCarregando(false)
+      setCarregando(false);
     }
   }
 
