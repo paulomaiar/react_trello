@@ -18,6 +18,8 @@ function ModalTarefa({ aberto, onFechar, onSalvar, tarefa=null, coluna='A FAZER'
 
     const [prioridade, setPrioridade] = useState('media');
 
+    const [salvando, setSalvando] = useState(false);
+
     // Preenche os campos ao abrir para edição
 
     useEffect(() => {
@@ -83,31 +85,30 @@ function ModalTarefa({ aberto, onFechar, onSalvar, tarefa=null, coluna='A FAZER'
 
     }
 
-    function handleSalvar() {
+    async function handleSalvar() {
 
         if (texto.trim() === '') return;
+
+        setSalvando(true);
 
         // Monta o objeto com os dados do formulário
 
         // id: undefined na criação — Dashboard gera o id
 
-        onSalvar({
+        try {
+            const salvou = await onSalvar({
+                id: tarefa?.id,
+                texto,
+                cep,
+                cidade,
+                prioridade,
+                coluna: tarefa?.coluna || coluna,
+            });
 
-            id: tarefa?.id, // undefined = criar | número = editar
-
-            texto,
-
-            cep,
-
-            cidade,
-
-            prioridade,
-
-            coluna: tarefa?.coluna || coluna,
-
-        });
-
-        onFechar();
+            if (salvou !== false) onFechar();
+        } finally {
+            setSalvando(false);
+        }
 
     }
     return (
@@ -144,9 +145,11 @@ function ModalTarefa({ aberto, onFechar, onSalvar, tarefa=null, coluna='A FAZER'
 
                 <div className={styles.botoes}>
 
-                    <button onClick={onFechar}>Cancelar</button>
+                    <button onClick={onFechar} disabled={salvando}>Cancelar</button>
 
-                    <button onClick={handleSalvar}>Salvar</button>
+                    <button onClick={handleSalvar} disabled={salvando}>
+                        {salvando ? 'Salvando...' : 'Salvar'}
+                    </button>
 
                 </div>
 

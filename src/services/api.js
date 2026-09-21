@@ -31,6 +31,25 @@ function normalizarPayloadTarefa(payload = {}) {
   }
 }
 
+function normalizarColunaVisual(coluna, concluida = false) {
+  if (concluida || coluna === 'concluido' || coluna === 'CONCLUÍDA') return 'CONCLUÍDA'
+
+  const colunaNormalizada = normalizarColuna(coluna)
+
+  if (colunaNormalizada === 'andamento') return 'EM ANDAMENTO'
+  if (colunaNormalizada === 'afazer') return 'A FAZER'
+
+  return coluna || 'A FAZER'
+}
+
+function normalizarTarefaVisual(tarefa = {}) {
+  return {
+    ...tarefa,
+    coluna: normalizarColunaVisual(tarefa.coluna, tarefa.concluida),
+  }
+}
+export { normalizarPayloadTarefa, normalizarTarefaVisual }
+
 export const api = axios.create({
   baseURL,
   headers: {
@@ -79,8 +98,6 @@ export async function loginNoBackend({ usuario, senha }) {
   const { data } = await api.post('/auth/login', { usuario, senha })
   return data
 }
-
-export { normalizarPayloadTarefa }
 
 export const tarefasApi = {
   listar: () => api.get('/tarefas'),

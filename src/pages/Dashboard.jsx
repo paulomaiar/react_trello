@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import PainelTarefas from '../components/PainelTarefas'
 import ModalTarefa from '../components/ModalTarefa'
-import api, { normalizarPayloadTarefa } from '../services/api'
+import api, { normalizarPayloadTarefa, normalizarTarefaVisual } from '../services/api'
 
 export default function Dashboard() {
     const [tarefas, setTarefas] = useState([])
     const [carregando, setCarregando] = useState(true)
-    const [erroAPI, setErroAPI] = useState(null)
+    const [erroCarregamento, setErroCarregamento] = useState(null)
+    const [avisoAPI, setAvisoAPI] = useState(null)
     const [filtro, setFiltro] = useState('all')
     const [filtroPrioridade, setFiltroPrioridade] = useState('todas')
     const [modalAberto, setModalAberto] = useState(false)
@@ -19,10 +20,10 @@ export default function Dashboard() {
             try {
                 const resposta = await api.get('/tarefas')
                 setTarefas(resposta.data)
-                setErroAPI(null)
+                setErroCarregamento(null)
             } catch (erro) {
                 console.error('Erro ao buscar dados do servidor:', erro)
-                setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao carregar tarefas')
+                setErroCarregamento(erro.response?.data?.erro || erro.message || 'Erro ao carregar tarefas')
                 setTarefas([])
             } finally {
                 setCarregando(false)
@@ -68,23 +69,25 @@ export default function Dashboard() {
     }
 
     async function adicionarTarefa({ texto: textoTarefa, prioridade: prioridadeTarefa, cep: cepTarefa }) {
-        const cidadeTarefa = await consultarCidade(cepTarefa)
-
-        const novaTarefa = {
-            texto: textoTarefa,
-            prioridade: prioridadeTarefa,
-            concluida: false,
-            coluna: colunaAtiva || 'A FAZER',
-            cidade: cidadeTarefa || '',
-        }
+        const colunaTarefa = colunaAtiva || 'A FAZER'
 
         try {
+            const cidadeTarefa = await consultarCidade(cepTarefa)
+            const novaTarefa = {
+                texto: textoTarefa,
+                prioridade: prioridadeTarefa,
+                concluida: false,
+                coluna: colunaTarefa,
+                cidade: cidadeTarefa || '',
+            }
             const resposta = await api.post('/tarefas', normalizarPayloadTarefa(novaTarefa))
             setTarefas((tarefasAtuais) => [...tarefasAtuais, resposta.data])
-            setErroAPI(null)
+            setAvisoAPI(null)
+            return true
         } catch (erro) {
             console.error('Erro ao adicionar tarefa:', erro)
-            setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao adicionar tarefa')
+            setAvisoAPI(erro.response?.data?.erro || erro.message || 'Erro ao adicionar tarefa')
+            return false
         }
     }
 
@@ -94,10 +97,10 @@ export default function Dashboard() {
             setTarefas((prev) =>
                 prev.map((tarefa) => (tarefa.id === id ? resposta.data : tarefa))
             )
-            setErroAPI(null)
+            setAvisoAPI(null)
         } catch (erro) {
             console.error(`Erro ao atualizar a tarefa ${id}:`, erro)
-            setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao atualizar tarefa')
+            setAvisoAPI(erro.response?.data?.erro || erro.message || 'Erro ao atualizar tarefa')
         }
     }
 
@@ -136,45 +139,56 @@ export default function Dashboard() {
             await api.delete(`/tarefas/${id}`)
             const resposta = await api.get('/tarefas')
             setTarefas(resposta.data)
-            setErroAPI(null)
+            setAvisoAPI(null)
         } catch (erro) {
             console.error(`Erro ao excluir a tarefa ${id}:`, erro)
-            setErroAPI(erro.response?.data?.erro || erro.message || 'Erro ao excluir tarefa')
+            setAvisoAPI(erro.response?.data?.erro || erro.message || 'Erro ao excluir tarefa')
         }
     }
 
-    const tarefasExibidas = tarefas.map((tarefa) => ({
-        ...tarefa,
-        coluna: tarefa.coluna || (tarefa.concluida ? 'CONCLUÍDA' : 'A FAZER'),
-    }))
+    const tarefasExibidas = tarefas.map(normalizarTarefaVisual)
 
     async function handleSalvarTarefa(dadosTarefa) {
+        let salvou
+
         if (dadosTarefa.id) {
-            await atualizarTarefa(dadosTarefa.id, dadosTarefa)
+            salvou = await atualizarTarefa(dadosTarefa.id, dadosTarefa)
         } else {
-            await adicionarTarefa(dadosTarefa)
+            salvou = await adicionarTarefa(dadosTarefa)
         }
+
+        if (salvou === false) return false
+
         setModalAberto(false)
         setTarefaEditando(null)
         setColunaAtiva(null)
+        return true
     }
 
     if (carregando) {
         return <div style={{ padding: '2rem', textAlign: 'center' }}>Carregando tarefas...</div>
     }
 
-    if (erroAPI) {
+    if (erroCarregamento) {
         return (
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#d32f2f' }}>
+            <div className="dashboard-error">
                 <h2>Erro ao carregar tarefas</h2>
-                <p>{erroAPI}</p>
-                <button onClick={() => window.location.reload()}>Tentar novamente</button>
+                <p>{erroCarregamento}</p>
+                <button type="button" onClick={() => window.location.reload()}>Recarregar</button>
             </div>
         )
     }
 
     return (
         <>
+            {avisoAPI && (
+                <div className="dashboard-notice" role="alert">
+                    <span>{avisoAPI}</span>
+                    <button type="button" onClick={() => setAvisoAPI(null)} aria-label="Fechar aviso">
+                        Fechar
+                    </button>
+                </div>
+            )}
             <PainelTarefas
                 sectionHeader="Minhas tarefas"
                 tarefas={tarefasExibidas}

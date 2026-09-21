@@ -63,6 +63,49 @@ main#app {
   gap: 24px;
 }
 
+.dashboard-notice,
+.dashboard-error {
+  border: 1px solid rgba(255, 123, 123, 0.45);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(127, 29, 29, 0.32);
+  color: #ffd7d7;
+}
+
+.dashboard-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.95rem;
+}
+
+.dashboard-notice button,
+.dashboard-error button {
+  border: 1px solid rgba(255, 215, 215, 0.35);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.dashboard-notice button:hover,
+.dashboard-error button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.dashboard-error {
+  margin: 24px auto;
+  max-width: 560px;
+  text-align: center;
+}
+
+.dashboard-error h2 {
+  margin-top: 0;
+}
+
 .painel-tarefas {
   display: flex;
   flex-direction: column;
