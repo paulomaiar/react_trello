@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import './Login.css';
 
 export default function Cadastro() {
@@ -11,7 +11,6 @@ export default function Cadastro() {
   const [carregando, setCarregando] = useState(false);
 
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +18,7 @@ export default function Cadastro() {
     setCarregando(true);
 
     try {
-      await axios.post(`${API_URL}/usuarios`, {
+      await api.post('/usuarios', {
         nome,
         email,
         senha
