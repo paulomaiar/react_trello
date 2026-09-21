@@ -3,6 +3,7 @@ import Dashboard from '../pages/Dashboard'
 import Sobre from '../pages/Sobre'
 import Login from '../pages/Login'
 import Logout from '../pages/Logout'
+import Cadastro from '../pages/Cadastro'
 import RotaPrivada from '../components/RotaPrivada'
 import { useAuth } from '../context/useAuthHook'
 
@@ -19,6 +20,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/sobre" element={<Sobre />} />
       <Route path="/logout" element={<Logout />} />
+      <Route path="/cadastro" element={<Cadastro />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

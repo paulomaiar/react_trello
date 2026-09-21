@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuthHook'
 import { loginNoBackend } from '../services/api'
+import { Link } from 'react-router-dom'
 import './Login.css'
 
 export default function Login() {
@@ -86,9 +87,9 @@ export default function Login() {
           {carregando ? 'Entrando...' : 'Entrar'}
         </button>
 
-        <p className='login-aviso'>
-          Este login usa o backend em Node. Ajuste as credenciais conforme o servidor.
-        </p>
+        <p>
+          Ainda não tem conta? <Link to="/cadastro">Cadastre-se aqui</Link>
+      </p>
       </div>
     </div>
   )

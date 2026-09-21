@@ -24,6 +24,10 @@
 
 .login-subtitulo { color: #64748B; font-size: 0.9rem; text-align: center; }
 
+.login-form {
+    display: flex; flex-direction: column; gap: 14px;
+}
+
 .login-input {
 
     background: #0D1B2A; color: #E2E8F0;
