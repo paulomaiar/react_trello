@@ -1,164 +1,214 @@
 import { useState, useEffect } from 'react';
-
 import styles from './ModalTarefa.module.css';
+import { useAuth } from '../context/useAuthHook'
+import { mensagensDeErro } from '../services/api'
+import { paraNumero } from '../utils/paraNumero'
 
-import axios from 'axios';
+function ModalTarefa({
+    aberto,
+    onFechar,
+    onSalvar,
+    tarefa = null,
+    coluna = 'A FAZER',
+    prioridades = [],
+    usuarios = [],
+    projetos = [],
+    onCriarProjeto,
+}) {
+    const { usuario } = useAuth()
+    const [texto, setTexto] = useState(() => tarefa?.texto || '')
+    const [idPrioridade, setIdPrioridade] = useState(() => tarefa?.idprioridade ?? 2)
+    const [idUsuario, setIdUsuario] = useState(() => (
+        tarefa?.usuario_id ?? tarefa?.usuarioId ?? usuario?.id ?? usuarios[0]?.id ?? ''
+    ))
+    const [idProjeto, setIdProjeto] = useState(() => (
+        tarefa?.projeto_id ?? tarefa?.projetoId ?? projetos[0]?.id ?? ''
+    ))
+    const [criandoProjeto, setCriandoProjeto] = useState(() => !tarefa && projetos.length === 0)
+    const [novoProjetoNome, setNovoProjetoNome] = useState('')
+    const [erros, setErros] = useState([])
+    const [salvando, setSalvando] = useState(false)
+    const podeEditar = !tarefa || Number(tarefa.criadoPorId ?? tarefa.criado_por_id) === Number(usuario?.id)
 
-// tarefa: objeto para EDITAR | null para CRIAR
-
-// coluna: coluna onde o + foi clicado (criação)
-
-function ModalTarefa({ aberto, onFechar, onSalvar, tarefa=null, coluna='A FAZER' }) {
-
-    const [texto, setTexto] = useState('');
-
-    const [cep, setCep] = useState('');
-
-    const [cidade, setCidade] = useState('');
-
-    const [prioridade, setPrioridade] = useState('media');
-
-    const [salvando, setSalvando] = useState(false);
-
-    // Preenche os campos ao abrir para edição
+    /* eslint-disable react-hooks/set-state-in-effect */
+    useEffect(() => {
+        if (tarefa) {
+            setTexto(tarefa.texto || '')
+            setIdPrioridade(tarefa.idprioridade ?? 2)
+            setIdUsuario(tarefa.usuario_id ?? tarefa.usuarioId ?? '')
+            setIdProjeto(tarefa.projeto_id ?? tarefa.projetoId ?? '')
+        } else {
+            setTexto('')
+            setIdPrioridade(2)
+            setIdUsuario(usuario?.id || usuarios[0]?.id || '')
+            setIdProjeto((idAtual) => (
+                idAtual && projetos.some((item) => String(item.id) === String(idAtual))
+                    ? idAtual
+                    : projetos[0]?.id || ''
+            ))
+        }
+        setErros([])
+    }, [tarefa, aberto, usuario?.id, usuarios, projetos])
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     useEffect(() => {
+        if (!aberto) return undefined
 
-    if (tarefa) {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-        setTexto(tarefa.texto);
-
-        setCep(tarefa.cep || '');
-
-        setCidade(tarefa.cidade || '');
-
-        setPrioridade(tarefa.prioridade);
-
-    } else {
-
-        // Limpa os campos ao abrir para criação
-
-        setTexto(''); setCep(''); setCidade(''); setPrioridade('media');
-
-    }
-
-    }, [tarefa, aberto]); // roda quando o modal abre ou a tarefa muda
-
-
-
-    // Adicionar dentro do componente ModalTarefa:
-
-    useEffect(() => {
-
-    // Só registra o listener quando o modal estiver aberto
-
-        if (!aberto) return;
-
-        function handleEsc(e) {
-
-            if (e.key === 'Escape') onFechar();
-
+        function handleEsc(event) {
+            if (event.key === 'Escape') onFechar()
         }
 
-        document.addEventListener('keydown', handleEsc);
-
-        return () => {
-
-            document.removeEventListener('keydown', handleEsc)
-        };
-    }, [aberto, onFechar]);
-
-
-    async function consultarCidade(cepDigitado) {
-    if (cepDigitado.trim().length < 8) return;
-
-    try {
-
-        const { data } = await axios.get(
-
-        `https://viacep.com.br/ws/${cepDigitado}/json/`
-
-    );
-
-    if (!data.erro) setCidade(data.localidade + '/' + data.uf);
-    } catch { /* ignora erro de CEP silenciosamente */ }
-
-    }
+        document.addEventListener('keydown', handleEsc)
+        return () => document.removeEventListener('keydown', handleEsc)
+    }, [aberto, onFechar])
 
     async function handleSalvar() {
-
-        if (texto.trim() === '') return;
-
-        setSalvando(true);
-
-        // Monta o objeto com os dados do formulário
-
-        // id: undefined na criação — Dashboard gera o id
-
-        try {
-            const salvou = await onSalvar({
-                id: tarefa?.id,
-                texto,
-                cep,
-                cidade,
-                prioridade,
-                coluna: tarefa?.coluna || coluna,
-            });
-
-            if (salvou !== false) onFechar();
-        } finally {
-            setSalvando(false);
+        if (!podeEditar) return
+        if (criandoProjeto && !novoProjetoNome.trim()) {
+            setErros(['Informe o nome do projeto'])
+            return
+        }
+        if (!criandoProjeto && !idProjeto) {
+            setErros(['Selecione um projeto'])
+            return
         }
 
+        setSalvando(true)
+        setErros([])
+
+        try {
+            let projetoId = idProjeto
+            if (criandoProjeto) {
+                if (!onCriarProjeto) {
+                    throw new Error('A criação de projetos não está disponível.')
+                }
+                const projetoCriado = await onCriarProjeto({ nome: novoProjetoNome.trim() })
+                if (!projetoCriado?.id) {
+                    throw new Error('A API não retornou o projeto criado.')
+                }
+                projetoId = projetoCriado.id
+                setIdProjeto(projetoId)
+                setCriandoProjeto(false)
+                setNovoProjetoNome('')
+            }
+
+            const dados = {
+                id: tarefa?.id,
+                texto,
+                idprioridade: paraNumero(idPrioridade),
+                usuario_id: paraNumero(idUsuario),
+                projeto_id: paraNumero(projetoId),
+                coluna: tarefa?.coluna || coluna,
+            }
+            await onSalvar(dados)
+            onFechar()
+        } catch (erro) {
+            setErros(mensagensDeErro(erro))
+        } finally {
+            setSalvando(false)
+        }
     }
+
     return (
-
-        // Overlay: clique fora fecha o modal
-
         <div className={styles.overlay} onClick={onFechar}>
-
-            {/* stopPropagation: evita fechar ao clicar dentro do card */}
-
-            <div className={styles.card} onClick={e => e.stopPropagation()}>
-
+            <div className={styles.card} onClick={(event) => event.stopPropagation()}>
                 <h2>{tarefa ? 'Editar tarefa' : 'Nova tarefa'}</h2>
 
-                <input placeholder='Texto da tarefa' value={texto}
-
-                onChange={e => setTexto(e.target.value)} />
-
-                <input placeholder='CEP (opcional)' value={cep}
-
-                onChange={e => { setCep(e.target.value); consultarCidade(e.target.value); }} />
-
-                {cidade && <p className={styles.cidade}>{cidade}</p>}
-
-                <select value={prioridade} onChange={e => setPrioridade(e.target.value)}>
-
-                    <option value='alta'>Alta</option>
-
-                    <option value='media'>Média</option>
-
-                    <option value='baixa'>Baixa</option>
-
-                </select>
-
-                <div className={styles.botoes}>
-
-                    <button onClick={onFechar} disabled={salvando}>Cancelar</button>
-
-                    <button onClick={handleSalvar} disabled={salvando}>
-                        {salvando ? 'Salvando...' : 'Salvar'}
-                    </button>
-
+                <div className={styles.campo}>
+                    <label htmlFor="tarefa-texto">Tarefa</label>
+                    <input
+                        id="tarefa-texto"
+                        placeholder="Texto da tarefa"
+                        value={texto}
+                        onChange={(event) => setTexto(event.target.value)}
+                        disabled={!podeEditar}
+                    />
                 </div>
 
+                <div className={styles.campo}>
+                    <label htmlFor="tarefa-usuario">Responsável</label>
+                    <select id="tarefa-usuario" value={idUsuario} onChange={(event) => setIdUsuario(event.target.value)} disabled={!podeEditar}>
+                        <option value="">Selecione um responsável</option>
+                        {usuarios.map((item) => (
+                            <option key={item.id} value={item.id}>{item.nome}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className={styles.campo}>
+                    <label htmlFor={criandoProjeto ? 'novo-projeto-nome' : 'tarefa-projeto'}>Projeto</label>
+                    {criandoProjeto ? (
+                        <>
+                            <input
+                                id="novo-projeto-nome"
+                                placeholder="Nome do novo projeto"
+                                value={novoProjetoNome}
+                                onChange={(event) => setNovoProjetoNome(event.target.value)}
+                                disabled={!podeEditar}
+                            />
+                            {projetos.length > 0 && (
+                                <button
+                                    type="button"
+                                    className={styles.botaoProjeto}
+                                    onClick={() => setCriandoProjeto(false)}
+                                    disabled={!podeEditar}
+                                >
+                                    Selecionar projeto existente
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        <div className={styles.selecaoProjeto}>
+                            <select
+                                id="tarefa-projeto"
+                                value={idProjeto}
+                                onChange={(event) => setIdProjeto(event.target.value)}
+                                disabled={!podeEditar}
+                            >
+                                <option value="">Selecione um projeto</option>
+                                {idProjeto && !projetos.some((item) => String(item.id) === String(idProjeto)) && (
+                                    <option value={idProjeto}>{tarefa?.projetoNome || 'Projeto atual'}</option>
+                                )}
+                                {projetos.map((item) => (
+                                    <option key={item.id} value={item.id}>{item.nome}</option>
+                                ))}
+                            </select>
+                            <button
+                                type="button"
+                                className={styles.botaoProjeto}
+                                onClick={() => setCriandoProjeto(true)}
+                                disabled={!podeEditar}
+                            >
+                                + Novo Projeto
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className={styles.campo}>
+                    <label htmlFor="tarefa-prioridade">Prioridade</label>
+                    <select id="tarefa-prioridade" value={idPrioridade} onChange={(event) => setIdPrioridade(event.target.value)} disabled={!podeEditar}>
+                        {prioridades.map((item) => (
+                            <option key={item.id} value={item.id}>{item.descricao}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {erros.length > 0 && (
+                    <ul className={styles.erros}>
+                        {erros.map((msg, i) => <li key={i}>{msg}</li>)}
+                    </ul>
+                )}
+
+                <div className={styles.botoes}>
+                    <button onClick={onFechar} disabled={salvando}>Cancelar</button>
+                    <button onClick={handleSalvar} disabled={salvando || !podeEditar}>
+                        {salvando ? 'Salvando...' : 'Salvar'}
+                    </button>
+                </div>
             </div>
-
         </div>
-
     )
-
 }
 
 export default ModalTarefa

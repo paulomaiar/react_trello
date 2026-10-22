@@ -13,6 +13,7 @@ export default function PainelTarefas({
     onAtualizarPrioridade,
     onAtualizarColuna,
     onFiltroPrioridadeChange,
+    prioridades = [],
 }) {
     return (
         <section className="painel-tarefas" aria-labelledby="tarefas-title" id="tarefas">
@@ -35,6 +36,7 @@ export default function PainelTarefas({
                 onAtualizarPrioridade={onAtualizarPrioridade}
                 onAtualizarColuna={onAtualizarColuna}
                 onAdicionar={onAdicionar}
+                prioridades={prioridades}
             />
         </section>
     )

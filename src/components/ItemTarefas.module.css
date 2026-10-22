@@ -31,6 +31,29 @@
   min-width: 0;
 }
 
+.badge {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.baixa {
+  background: rgba(61, 220, 151, 0.18);
+  color: #7af0bd;
+}
+
+.media {
+  background: rgba(247, 201, 72, 0.18);
+  color: #f7d86f;
+}
+
+.alta {
+  background: rgba(255, 92, 116, 0.18);
+  color: #ff8fa3;
+}
+
 .text {
   color: var(--text);
   line-height: 1.6;

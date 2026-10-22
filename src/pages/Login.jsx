@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuthHook'
-import { loginNoBackend } from '../services/api'
+import { loginNoBackend, mensagensDeErro } from '../services/api'
 import { Link } from 'react-router-dom'
 import './Login.css'
 
@@ -43,14 +43,8 @@ export default function Login() {
       login(dados.usuario, dados.token)
 
       navigate('/dashboard');
-    } catch (error) {
-      // 3. Tenta ler 'erro' da API primeiro, depois 'message' ou usa o texto padrão
-      const mensagem =
-        error?.response?.data?.erro ||
-        error?.response?.data?.message ||
-        'Usuário ou senha incorretos';
-
-      setErro(mensagem);
+    } catch (err) {
+      setErro(mensagensDeErro(err).join(' '))
       setShake(true);
       setTimeout(() => setShake(false), 500);
     } finally {
@@ -94,4 +88,3 @@ export default function Login() {
     </div>
   )
 }
-

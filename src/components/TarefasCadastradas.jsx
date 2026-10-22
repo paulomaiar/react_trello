@@ -18,6 +18,7 @@ export default function TarefasCadastradas({
     onAtualizarColuna,
     onEditar,
     onAdicionar,
+    prioridades = [],
 }) {
 
     const total = tarefas.length
@@ -36,7 +37,7 @@ export default function TarefasCadastradas({
         // Filtro de PRIORIDADE
         const passouFiltroPrioridade = 
             filtroPrioridade === 'todas' ? true :
-            tarefa.prioridade === filtroPrioridade
+            String(tarefa.idprioridade) === filtroPrioridade
         
         // AMBOS precisam passar
         return passouFiltroStatus && passouFiltroPrioridade
@@ -66,9 +67,9 @@ export default function TarefasCadastradas({
                     onChange={(e) => onFiltroPrioridadeChange(e.target.value)}
                 >
                     <option value="todas">Todas</option>
-                    <option value="alta">🔴 Alta</option>
-                    <option value="media">🟡 Média</option>
-                    <option value="baixa">🟢 Baixa</option>
+                    {prioridades.map((prioridade) => (
+                        <option key={prioridade.id} value={prioridade.id}>{prioridade.descricao}</option>
+                    ))}
                 </select>
             </div>
 
@@ -92,6 +93,7 @@ export default function TarefasCadastradas({
                             onAtualizarColuna={onAtualizarColuna}
                             onEditar={onEditar}
                             onAdicionar={onAdicionar}
+                            prioridades={prioridades}
                         />
                     )
                 })}
@@ -99,4 +101,3 @@ export default function TarefasCadastradas({
         </section>
     )
 }
-

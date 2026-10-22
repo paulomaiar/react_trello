@@ -1,7 +1,9 @@
 import ItemTarefa from './ItemTarefas'
 import styles from './ItemTarefas.module.css'
 
-export default function ListaTarefas({ tarefas, onConcluir, onExcluir, onAtualizarPrioridade, onAtualizarColuna, onEditar, coluna }) {
+const CLASSE_PRIORIDADE = { 1: 'baixa', 2: 'media', 3: 'alta' }
+
+export default function ListaTarefas({ tarefas, onConcluir, onExcluir, onAtualizarPrioridade, onAtualizarColuna, onEditar, coluna, prioridades = [] }) {
     const total = tarefas.length
     const pendentes = tarefas.filter((tarefa) => !(tarefa.concluida || tarefa.coluna === 'CONCLUÍDA')).length
     const concluidas = total - pendentes
@@ -14,17 +16,25 @@ export default function ListaTarefas({ tarefas, onConcluir, onExcluir, onAtualiz
                 <span id="contador-concluidas">Concluídas: {concluidas}</span>
             </div>
             <ul id={`lista-tarefas-${coluna?.toLowerCase().replace(/\s+/g, '-')}`} className={styles.list}>
-                <ItemTarefa
-                    tarefas={tarefas}
-                    onConcluir={onConcluir}
-                    onExcluir={onExcluir}
-                    onAtualizarPrioridade={onAtualizarPrioridade}
-                    onAtualizarColuna={onAtualizarColuna}
-                    onEditar={onEditar}
-                />
+                {tarefas.map((tarefa) => {
+                    const prioridade = prioridades.find((item) => Number(item.id) === Number(tarefa.idprioridade))
+                    return (
+                        <ItemTarefa
+                            key={tarefa.id}
+                            tarefas={[tarefa]}
+                            rotuloPrioridade={prioridade?.descricao}
+                            classePrioridade={CLASSE_PRIORIDADE[tarefa.idprioridade]}
+                            prioridades={prioridades}
+                            onConcluir={onConcluir}
+                            onExcluir={onExcluir}
+                            onAtualizarPrioridade={onAtualizarPrioridade}
+                            onAtualizarColuna={onAtualizarColuna}
+                            onEditar={onEditar}
+                        />
+                    )
+                })}
             </ul>
         </>
     )
 }
-
 

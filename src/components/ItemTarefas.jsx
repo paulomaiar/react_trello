@@ -1,15 +1,27 @@
 import styles from './ItemTarefas.module.css'
 import PrioridadeTarefa from './PrioridadeTarefa'
+import { useAuth } from '../context/useAuthHook'
 
-export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtualizarPrioridade, onAtualizarColuna, onEditar }) {
-
+export default function ItemTarefa({
+    tarefas = [],
+    rotuloPrioridade,
+    classePrioridade,
+    prioridades = [],
+    onConcluir,
+    onExcluir,
+    onAtualizarPrioridade,
+    onAtualizarColuna,
+    onEditar,
+}) {
+    const { usuario } = useAuth()
 
     return (
         <>
             {tarefas.map((tarefa) => {
-                const prioridadeClassName = tarefa.prioridade === 'alta'
+                const ehCriador = Number(tarefa.criadoPorId ?? tarefa.criado_por_id) === Number(usuario?.id)
+                const prioridadeClassName = Number(tarefa.idprioridade) === 3 || tarefa.prioridade === 'alta'
                     ? styles.prioridadeAlta
-                    : tarefa.prioridade === 'media'
+                    : Number(tarefa.idprioridade) === 2 || tarefa.prioridade === 'media'
                         ? styles.prioridadeMedia
                         : styles.prioridadeBaixa
 
@@ -27,12 +39,9 @@ export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtua
                     <li key={tarefa.id} className={itemClassName} onDoubleClick={() => onEditar?.(tarefa)}>
                         <div className={styles.content}>
                             <span className={textClassName}>{tarefa.texto}</span>
-                            {tarefa.cidade || tarefa.cep ? (
-                                <div className={styles.meta}>
-                                    {tarefa.cep ? <small>CEP: {tarefa.cep}</small> : null}
-                                    {tarefa.cidade ? <small> — Cidade: {tarefa.cidade}</small> : null}
-                                </div>
-                            ) : null}
+                            <span className={`${styles.badge} ${styles[classePrioridade] || ''}`}>
+                                {rotuloPrioridade || tarefa.prioridade}
+                            </span>
                         </div>
                         <div className={styles.actions}>
                             <label className="prioridade-label">
@@ -48,9 +57,11 @@ export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtua
                                 </select>
                             </label>
                             <PrioridadeTarefa
-                                prioridade={tarefa.prioridade}
+                                prioridade={tarefa.idprioridade}
+                                prioridades={prioridades}
                                 setPrioridade={(novaPrioridade) => onAtualizarPrioridade?.(tarefa.id, novaPrioridade)}
                                 label=""
+                                disabled={!ehCriador}
                             />
                             <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => onEditar?.(tarefa)}>
                                 ✏️ Editar
@@ -58,9 +69,11 @@ export default function ItemTarefa({ tarefas = [], onConcluir, onExcluir, onAtua
                             <button type="button" className={`${styles.button} ${styles.primary}`} onClick={() => onConcluir?.(tarefa.id)}>
                                 {tarefa.concluida || tarefa.coluna === 'CONCLUÍDA' ? 'Reabrir' : 'Concluir'}
                             </button>
-                            <button type="button" className={`${styles.button} ${styles.danger}`} onClick={() => onExcluir?.(tarefa.id)}>
-                                Excluir
-                            </button>
+                            {ehCriador && (
+                                <button type="button" className={`${styles.button} ${styles.danger}`} onClick={() => onExcluir?.(tarefa.id)}>
+                                    Excluir
+                                </button>
+                            )}
                         </div>
                     </li>
                 )

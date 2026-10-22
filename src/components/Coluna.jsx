@@ -11,6 +11,7 @@ export default function Coluna({
     onAtualizarColuna,
     onEditar,
     onAdicionar,
+    prioridades = [],
 }) {
     return (
         <section className={className}>
@@ -33,6 +34,7 @@ export default function Coluna({
                 onAtualizarPrioridade={onAtualizarPrioridade}
                 onAtualizarColuna={onAtualizarColuna}
                 onEditar={onEditar}
+                prioridades={prioridades}
             />
         </section>
     )

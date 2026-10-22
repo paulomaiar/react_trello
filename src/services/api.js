@@ -27,7 +27,6 @@ function normalizarPayloadTarefa(payload = {}) {
   return {
     ...payload,
     coluna: payload.coluna !== undefined ? normalizarColuna(payload.coluna) : payload.coluna,
-    prioridade: payload.prioridade !== undefined ? String(payload.prioridade).trim().toLowerCase() : payload.prioridade,
   }
 }
 
@@ -49,6 +48,25 @@ function normalizarTarefaVisual(tarefa = {}) {
   }
 }
 export { normalizarPayloadTarefa, normalizarTarefaVisual }
+
+export function mensagensDeErro(erro) {
+  const dados = erro?.response?.data
+
+  if (!dados) return ['Não foi possível conectar à API.']
+
+  const detalhes = dados.erro?.detalhes
+  if (Array.isArray(detalhes)) {
+    return detalhes.map((detalhe) => {
+      if (typeof detalhe === 'string') return detalhe
+      if (detalhe && typeof detalhe === 'object') {
+        return [detalhe.campo, detalhe.mensagem].filter(Boolean).join(': ')
+      }
+      return String(detalhe)
+    })
+  }
+
+  return [dados.mensagem || dados.erro?.mensagem || erro.message || 'Ocorreu um erro.']
+}
 
 export const api = axios.create({
   baseURL,
@@ -82,12 +100,12 @@ api.interceptors.response.use(
   (resposta) => resposta,
   (erro) => {
     if (erro.response?.status === 401) {
-      // Limpa ambas as chaves do localStorage
-      localStorage.removeItem('taskflow_token');
-      localStorage.removeItem('taskflow_usuario');
-
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      const ehLogin = erro.config?.url?.includes('/auth/login') || erro.config?.url?.includes('/login')
+      if (!ehLogin) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('taskflow_token')
+        localStorage.removeItem('taskflow_usuario')
+        window.location.href = '/login'
       }
     }
     return Promise.reject(erro);
