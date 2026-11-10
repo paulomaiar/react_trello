@@ -98,17 +98,17 @@
 }
 
 .prioridadeAlta {
-  border-left-color: #ff5c74;
+  border-left-color: var(--cor-prioridade, #ff5c74);
   background: rgba(255, 92, 116, 0.14);
 }
 
 .prioridadeMedia {
-  border-left-color: #f7c948;
+  border-left-color: var(--cor-prioridade, #f7c948);
   background: rgba(247, 201, 72, 0.14);
 }
 
 .prioridadeBaixa {
-  border-left-color: #3ddc97;
+  border-left-color: var(--cor-prioridade, #3ddc97);
   background: rgba(61, 220, 151, 0.14);
 }
 

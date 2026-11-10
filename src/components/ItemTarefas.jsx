@@ -36,7 +36,12 @@ export default function ItemTarefa({
                 const textClassName = `${styles.text} ${tarefa.concluida || tarefa.coluna === 'CONCLUÍDA' ? styles.completedText : ''}`
 
                 return (
-                    <li key={tarefa.id} className={itemClassName} onDoubleClick={() => onEditar?.(tarefa)}>
+                    <li
+                        key={tarefa.id}
+                        className={itemClassName}
+                        style={{ '--cor-prioridade': tarefa.prioridade_cor || undefined }}
+                        onDoubleClick={() => onEditar?.(tarefa)}
+                    >
                         <div className={styles.content}>
                             <span className={textClassName}>{tarefa.texto}</span>
                             <span className={`${styles.badge} ${styles[classePrioridade] || ''}`}>

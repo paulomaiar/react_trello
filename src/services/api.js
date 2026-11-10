@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/+$/, '')
+const baseURL = (import.meta.env.VITE_BASE_URL_API || 'http://localhost:3001').replace(/\/+$/, '')
 
 function normalizarColuna(coluna) {
   if (coluna === undefined || coluna === null || coluna === '') return coluna
@@ -87,10 +87,7 @@ api.interceptors.request.use((config) => {
   }
 
   if (token) {
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${token}`,
-    }
+    config.headers.Authorization = `Bearer ${token}`
   }
 
   return config
@@ -100,8 +97,9 @@ api.interceptors.response.use(
   (resposta) => resposta,
   (erro) => {
     if (erro.response?.status === 401) {
-      const ehLogin = erro.config?.url?.includes('/auth/login') || erro.config?.url?.includes('/login')
-      if (!ehLogin) {
+      const url = erro.config?.url || ''
+      const ehAutenticacao = /\/auth\/(?:login|cadastro)(?:\/|$|\?)/.test(url)
+      if (!ehAutenticacao) {
         localStorage.removeItem('token')
         localStorage.removeItem('taskflow_token')
         localStorage.removeItem('taskflow_usuario')
