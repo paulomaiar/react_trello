@@ -109,6 +109,8 @@ function ModalTarefa({
         }
     }
 
+    if (!aberto) return null
+
     return (
         <div className={styles.overlay} onClick={onFechar}>
             <div className={styles.card} onClick={(event) => event.stopPropagation()}>
