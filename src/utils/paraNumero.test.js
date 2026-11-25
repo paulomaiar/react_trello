@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { paraNumero } from './paraNumero'
 import { api, mensagensDeErro } from '../services/api'
 
@@ -41,22 +41,17 @@ describe('mensagensDeErro', () => {
 })
 
 describe('API unauthorized interceptor', () => {
-    const localStorageOriginal = globalThis.localStorage
-    const windowOriginal = globalThis.window
     afterEach(() => {
-        if (localStorageOriginal === undefined) Reflect.deleteProperty(globalThis, 'localStorage')
-        else globalThis.localStorage = localStorageOriginal
-        if (windowOriginal === undefined) Reflect.deleteProperty(globalThis, 'window')
-        else globalThis.window = windowOriginal
+        vi.unstubAllGlobals()
     })
 
     function configurarBrowserFalso() {
         const removidos = []
-        globalThis.localStorage = {
+        vi.stubGlobal('localStorage', {
             getItem: () => null,
             removeItem: (key) => removidos.push(key),
-        }
-        globalThis.window = { location: { href: '/dashboard', pathname: '/dashboard' } }
+        })
+        vi.stubGlobal('window', { location: { href: '/dashboard', pathname: '/dashboard' } })
         return removidos
     }
 
